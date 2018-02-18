@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+# Usage:
+#     source activate 
+#
+# This Python virtualenv inspired script activates this project's 
+# working directory as it's own Go workspace. GOPATH should already 
+# be defined in a global context to store things like devtools.
+# "go get -u <dev-tool>" will continue to install into the global
+# PATH as it was defined first. 
+#
+# This local workspace's dependencies is then managed with dep:
+#     https://golang.github.io/dep/
+#
+# This allows for modern dependency management with dep, and a more
+# polygot friendly folder structure that doesn't require all go projects
+# fall under the same root directory on the developer's machine. 
+#
+export GOPATH=$GOPATH:$(realpath $(dirname $0))
