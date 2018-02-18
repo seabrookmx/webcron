@@ -17,3 +17,7 @@
 
 # Ignore the vendor folder (added by "dep ensure")
 /src/webcron/vendor
+
+# Ignore local package files used for development
+/pkg
+

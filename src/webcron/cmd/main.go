@@ -1,27 +1,42 @@
 package main
 
-import "fmt"
-import "github.com/robfig/cron"
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"webcron/jobs"
 
-func main() {
-	c := cron.New()
-	c.AddFunc("0 30 * * * *", func() { fmt.Println("Every hour on the half hour") })
-	c.AddFunc("@hourly", func() { fmt.Println("Every hour") })
-	c.AddFunc("@every 1h30m", func() { fmt.Println("Every hour thirty") })
-	c.Start()
+	"github.com/gorilla/mux"
+)
 
-	// Funcs are invoked in their own goroutine, asynchronously.
-
-	// Funcs may also be added to a running Cron
-	c.AddFunc("@daily", func() { fmt.Println("Every day") })
-
-	// Inspect the cron job entries' next and previous run times.
-	for _, entry := range c.Entries() {
-		fmt.Println(entry.Schedule)
+func getJobs(w http.ResponseWriter, r *http.Request) {
+	// TODO: interface with the job manager
+	data, err := json.Marshal([]string{"things", "and", "stuff"})
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
-	// Stop the scheduler (does not stop any jobs already running).
-	c.Stop()
+	io.WriteString(w, string(data[:]))
+}
 
-	fmt.Println("Done!")
+func createJob(w http.ResponseWriter, r *http.Request) {
+	// TODO: interface with the job manager
+	w.WriteHeader(http.StatusCreated)
+}
+
+func main() {
+	jobs.NewJobManager()
+
+	root := mux.NewRouter()
+
+	jobRoute := root.PathPrefix("/jobs").Subrouter()
+	jobRoute.Methods("GET").HandlerFunc(getJobs)
+	jobRoute.Methods("POST").HandlerFunc(createJob)
+
+	http.Handle("/", root)
+
+	fmt.Println("Listening on 8080")
+	http.ListenAndServe(":8080", nil)
 }
