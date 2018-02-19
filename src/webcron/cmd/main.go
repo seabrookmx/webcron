@@ -4,35 +4,72 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+
 	"webcron/jobs"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
-func getJobs(w http.ResponseWriter, r *http.Request) {
-	// TODO: interface with the job manager
-	data, err := json.Marshal([]string{"things", "and", "stuff"})
+var manager *jobs.JobManager
+
+func getJob(w http.ResponseWriter, r *http.Request) {
+	rawId := mux.Vars(r)["id"]
+
+	id, err := uuid.Parse(rawId)
+	var job jobs.Job
+	if err == nil {
+		job = manager.GetJob(id)
+	}
+	var encodedJob []byte
+	if err == nil {
+		encodedJob, err = json.Marshal(job)
+	}
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		http.Error(w, "Error occurred retrieving job", http.StatusInternalServerError)
+		return
+	}
+	if job.Id == uuid.Nil {
+		http.Error(w, "Job not found", http.StatusNotFound)
 		return
 	}
 
-	io.WriteString(w, string(data[:]))
+	io.WriteString(w, string(encodedJob[:]))
 }
 
 func createJob(w http.ResponseWriter, r *http.Request) {
-	// TODO: interface with the job manager
+	var job jobs.Job
+
+	bytes, _ := ioutil.ReadAll(r.Body)
+	err := json.Unmarshal(bytes, &job)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid JSON body: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	job, err = manager.CreateJob(job)
+	var encodedJob []byte
+	if err == nil {
+		encodedJob, err = json.Marshal(job)
+	}
+	if err != nil {
+		http.Error(w, "Error creating job", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
+	io.WriteString(w, string(encodedJob[:]))
 }
 
 func main() {
-	jobs.NewJobManager()
+	manager = jobs.NewJobManager()
 
 	root := mux.NewRouter()
 
 	jobRoute := root.PathPrefix("/jobs").Subrouter()
-	jobRoute.Methods("GET").HandlerFunc(getJobs)
+	jobRoute.Path("/{id}").Methods("GET").HandlerFunc(getJob)
 	jobRoute.Methods("POST").HandlerFunc(createJob)
 
 	http.Handle("/", root)

@@ -20,6 +20,12 @@
   version = "v1.6.1"
 
 [[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
   branch = "v2"
   name = "gopkg.in/robfig/cron.v2"
   packages = ["."]
@@ -28,6 +34,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5732762acfa72b1c2f21e5ffe42c07be7d4355bf0d9064007c7b08b9bf7a2f5f"
+  inputs-digest = "9799171dd39333e513e61ef3b97699fd533b26075d0cdd34b79d059c918f613b"
   solver-name = "gps-cdcl"
   solver-version = 1
