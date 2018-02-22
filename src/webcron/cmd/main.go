@@ -9,29 +9,21 @@ import (
 
 	"webcron/jobs"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
 var manager *jobs.JobManager
 
 func getJob(w http.ResponseWriter, r *http.Request) {
-	rawId := mux.Vars(r)["id"]
+	id := mux.Vars(r)["id"]
 
-	id, err := uuid.Parse(rawId)
-	var job jobs.Job
-	if err == nil {
-		job = manager.GetJob(id)
-	}
-	var encodedJob []byte
-	if err == nil {
-		encodedJob, err = json.Marshal(job)
-	}
+	job := manager.GetJob(id)
+	encodedJob, err := json.Marshal(job)
 	if err != nil {
 		http.Error(w, "Error occurred retrieving job", http.StatusInternalServerError)
 		return
 	}
-	if job.Id == uuid.Nil {
+	if job.Id == "" {
 		http.Error(w, "Job not found", http.StatusNotFound)
 		return
 	}
@@ -64,7 +56,11 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	manager = jobs.NewJobManager()
+	var err error
+	manager, err = jobs.NewJobManager()
+	if err != nil {
+		panic(err)
+	}
 
 	root := mux.NewRouter()
 

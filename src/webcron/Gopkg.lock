@@ -2,10 +2,16 @@
 
 
 [[projects]]
-  name = "github.com/google/uuid"
-  packages = ["."]
-  revision = "064e2069ce9c359c118179501254f67d7d37ba24"
-  version = "0.2"
+  branch = "master"
+  name = "github.com/globalsign/mgo"
+  packages = [
+    ".",
+    "bson",
+    "internal/json",
+    "internal/sasl",
+    "internal/scram"
+  ]
+  revision = "baa28fcb8e7d5dfab92026c0920cb6c9ae72faa2"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -34,6 +40,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "9799171dd39333e513e61ef3b97699fd533b26075d0cdd34b79d059c918f613b"
+  inputs-digest = "0357d7f2ab85c639c926e0e8e692510770fa69c74b0f4ea54b240813ea201d50"
   solver-name = "gps-cdcl"
   solver-version = 1
