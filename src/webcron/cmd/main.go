@@ -6,10 +6,13 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"webcron/jobs"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 )
 
 var manager *jobs.JobManager
@@ -56,10 +59,16 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	var err error
-	manager, err = jobs.NewJobManager()
+	viper.SetConfigName("config")
+	viper.AddConfigPath(".")
+	// TODO: parse environment variables here
+	err := viper.ReadInConfig()
+	if err == nil {
+		// TODO: handle more configuration knobs here
+		manager, err = jobs.NewJobManager(viper.GetBool("dryRun"))
+	}
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "Error initializing webcron"))
 	}
 
 	root := mux.NewRouter()
@@ -70,6 +79,7 @@ func main() {
 
 	http.Handle("/", root)
 
-	fmt.Println("Listening on 8080")
-	http.ListenAndServe(":8080", nil)
+	port := viper.GetInt("port")
+	fmt.Printf("Listening on %d\n", port)
+	http.ListenAndServe(":"+strconv.Itoa(port), nil)
 }

@@ -22,23 +22,20 @@ type JsonRpcCall struct {
 }
 
 type Job struct {
-	Id           bson.ObjectId   `json:"id" bson:"_id"`
+	Id bson.ObjectId `json:"id" bson:"_id"`
+	// TODO: add namespace and name properties
 	Schedule     string          `json:"schedule"`
 	CallTemplate JsonRpcTemplate `json:"callTemplate"`
-}
-
-func (j Job) Run() {
-	// TODO: call a Webhook here!
-	fmt.Println(j.CallTemplate)
 }
 
 type JobManager struct {
 	entryMap map[bson.ObjectId]cron.EntryID
 	cron     *cron.Cron
 	session  *mongoSession
+	dryRun   bool
 }
 
-func NewJobManager() (*JobManager, error) {
+func NewJobManager(dryRun bool) (*JobManager, error) {
 	session, err := newSession()
 	if err != nil {
 		return nil, errors.Wrap(err, "Error initializing JobManager")
@@ -48,6 +45,7 @@ func NewJobManager() (*JobManager, error) {
 		make(map[bson.ObjectId]cron.EntryID),
 		cron.New(),
 		session,
+		dryRun,
 	}
 	/*
 	 * Example schedule formats:
@@ -66,7 +64,7 @@ func NewJobManager() (*JobManager, error) {
 	results := make([]Job, 0)
 	err = m.session.get().Find(nil).Iter().All(&results)
 	for _, job := range results {
-		cid, err := m.cron.AddJob(job.Schedule, job)
+		cid, err := m.cron.AddFunc(job.Schedule, func() { m.RunJob(job) })
 		if err != nil {
 			break
 		}
@@ -80,6 +78,20 @@ func NewJobManager() (*JobManager, error) {
 	m.cron.Start()
 
 	return m, nil
+}
+
+func (m *JobManager) RunJob(job Job) {
+	/*
+	 * We implement the Run function on the manager
+	 * instead of the Job so we can get access to some
+	 * global state, such as configuration params.
+	 */
+	if m.dryRun {
+		// TODO: replace fmt.Println with calls to logrus
+		fmt.Println(job.CallTemplate)
+	} else {
+		panic(errors.New("Only dryRun mode is currently supported - FIXME"))
+	}
 }
 
 func (m *JobManager) GetJob(jobId string) Job {
@@ -104,7 +116,7 @@ func (m *JobManager) CreateJob(job Job) (Job, error) {
 	}
 	job.Id = bson.NewObjectId()
 
-	cid, err := m.cron.AddJob(job.Schedule, job)
+	cid, err := m.cron.AddFunc(job.Schedule, func() { m.RunJob(job) })
 	if err == nil {
 		err = m.session.get().Insert(job)
 	}
