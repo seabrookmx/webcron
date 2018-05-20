@@ -34,6 +34,41 @@ func getJob(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, string(encodedJob[:]))
 }
 
+func getJobs(w http.ResponseWriter, r *http.Request) {
+	skipStr := r.FormValue("skip")
+	if skipStr == "" {
+		skipStr = "0"
+	}
+	skip, _ := strconv.Atoi(skipStr)
+
+	limitStr := r.FormValue("limit")
+	if limitStr == "" {
+		limitStr = "100"
+	}
+	limit, _ := strconv.Atoi(limitStr)
+
+	jobs := manager.GetJobs(limit, skip)
+	encodedJobs, err := json.Marshal(jobs)
+	if err != nil {
+		http.Error(w, "Error occurred retrieving job", http.StatusInternalServerError)
+		return
+	}
+
+	io.WriteString(w, string(encodedJobs[:]))
+}
+
+func removeJob(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	err := manager.RemoveJob(id)
+	if err != nil {
+		http.Error(w, "Job not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func createJob(w http.ResponseWriter, r *http.Request) {
 	var job jobs.Job
 
@@ -72,10 +107,14 @@ func main() {
 	}
 
 	root := mux.NewRouter()
-
-	jobRoute := root.PathPrefix("/jobs").Subrouter()
-	jobRoute.Path("/{id}").Methods("GET").HandlerFunc(getJob)
+	rootRoute := root.PathPrefix("/jobs").Subrouter()
+	jobRoute := rootRoute.Path("").Subrouter()
 	jobRoute.Methods("POST").HandlerFunc(createJob)
+	jobRoute.Methods("GET").HandlerFunc(getJobs)
+
+	jobIDRoute := rootRoute.Path("/{id}").Subrouter()
+	jobIDRoute.Methods("GET").HandlerFunc(getJob)
+	jobIDRoute.Methods("DELETE").HandlerFunc(removeJob)
 
 	http.Handle("/", root)
 

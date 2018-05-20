@@ -106,9 +106,31 @@ func (m *JobManager) GetJob(jobId string) Job {
 	return result[0]
 }
 
-// TODO: GetJobs (with paging)
+func (m *JobManager) GetJobs(limit int, skip int) []Job {
+	result := make([]Job, 0)
+	err := m.session.get().Find(nil).Skip(skip).Limit(limit).Iter().All(&result)
+	if err != nil {
+		return []Job{}
+	}
 
-// TODO: RemoveJob
+	return result
+}
+
+func (m *JobManager) RemoveJob(jobId string) error {
+	job := m.GetJob(jobId)
+
+	if job.Id == bson.NewObjectId() {
+		return errors.New("Job not found")
+	}
+
+	err := m.session.get().RemoveId(job.Id)
+	if err != nil {
+		return err
+	}
+
+	m.cron.Remove(m.entryMap[job.Id])
+	return nil
+}
 
 func (m *JobManager) CreateJob(job Job) (Job, error) {
 	if job.Id != "" {
