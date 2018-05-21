@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"webcron/dto"
 	"webcron/jobs"
+	"webcron/postbacks"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -70,7 +72,7 @@ func removeJob(w http.ResponseWriter, r *http.Request) {
 }
 
 func createJob(w http.ResponseWriter, r *http.Request) {
-	var job jobs.Job
+	var job dto.Job
 
 	bytes, _ := ioutil.ReadAll(r.Body)
 	err := json.Unmarshal(bytes, &job)
@@ -97,10 +99,17 @@ func main() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
 	// TODO: parse environment variables here
+
 	err := viper.ReadInConfig()
 	if err == nil {
-		// TODO: handle more configuration knobs here
-		manager, err = jobs.NewJobManager(viper.GetBool("dryRun"))
+		var postbackTrigger postbacks.PostbackTrigger
+		if viper.GetBool("dryRun") {
+			postbackTrigger = postbacks.NewLogPostbackTrigger()
+		} else {
+			postbackTrigger = postbacks.NewHttpPostbackTrigger()
+		}
+
+		manager, err = jobs.NewJobManager(postbackTrigger)
 	}
 	if err != nil {
 		panic(errors.Wrap(err, "Error initializing webcron"))
