@@ -106,7 +106,7 @@ func main() {
 		if viper.GetBool("dryRun") {
 			postbackTrigger = postbacks.NewLogPostbackTrigger()
 		} else {
-			postbackTrigger = postbacks.NewHttpPostbackTrigger()
+			postbackTrigger = postbacks.NewHTTPPostbackTrigger()
 		}
 
 		manager, err = jobs.NewJobManager(postbackTrigger)

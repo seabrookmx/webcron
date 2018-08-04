@@ -27,29 +27,32 @@ func (t *LogPostbackTrigger) FireWebhook(call dto.JsonRpcCall) error {
 	return nil
 }
 
-type HttpPostbackTrigger struct{}
-
-func NewHttpPostbackTrigger() *HttpPostbackTrigger {
-	return &HttpPostbackTrigger{}
+type HTTPPostbackTrigger struct {
+	client *http.Client
 }
 
-func (t *HttpPostbackTrigger) FireWebhook(call dto.JsonRpcCall) error {
+func NewHTTPPostbackTrigger() *HTTPPostbackTrigger {
+	return &HTTPPostbackTrigger{
+		&http.Client{},
+	}
+}
+
+func (t *HTTPPostbackTrigger) FireWebhook(call dto.JsonRpcCall) error {
 	tmpl, err := template.New("t").Parse(call.Jsonrpc)
 
 	buf := new(bytes.Buffer)
-	if err == nil {
-		err = tmpl.Execute(buf, call.Params)
-	}
+	err = tmpl.Execute(buf, call.Params)
 	if err != nil {
 		return err
 	}
 
-	// tmpl, err := template.New("test").Parse("{{.Count}} items are made of {{.Material}}")
-	// if err != nil { panic(err) }
-	// err = tmpl.Execute(os.Stdout, sweaters)
-	// if err != nil { panic(err) }
+	req, err := http.NewRequest(call.Method, call.URL, buf)
+	if err != nil {
+		return err
+	}
 
-	resp, err := http.Post(call.URL, "application/json", buf)
+	req.Header.Add("Content-Type", "application/json")
+	resp, err := t.client.Do(req)
 
 	if err != nil {
 		return err

@@ -1,4 +1,4 @@
 {
-    "dryRun": true,
+    "dryRun": false,
     "port": 8080
 }
