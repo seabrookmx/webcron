@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"webcron/dto"
 	"webcron/jobs"
@@ -28,7 +29,7 @@ func getJob(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error occurred retrieving job", http.StatusInternalServerError)
 		return
 	}
-	if job.Id == "" {
+	if job.ID == "" {
 		http.Error(w, "Job not found", http.StatusNotFound)
 		return
 	}
@@ -87,7 +88,13 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 		encodedJob, err = json.Marshal(job)
 	}
 	if err != nil {
-		http.Error(w, "Error creating job", http.StatusInternalServerError)
+		errString := err.Error()
+		if strings.Contains(errString, "Failure adding") {
+			http.Error(w, errString, http.StatusInternalServerError)
+			return
+		}
+
+		http.Error(w, errString, http.StatusBadRequest)
 		return
 	}
 
@@ -98,7 +105,8 @@ func createJob(w http.ResponseWriter, r *http.Request) {
 func main() {
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
-	// TODO: parse environment variables here
+	viper.SetEnvPrefix("wc") // ex: WC_DRYRUN
+	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()
 	if err == nil {
@@ -117,6 +125,7 @@ func main() {
 
 	root := mux.NewRouter()
 	rootRoute := root.PathPrefix("/jobs").Subrouter()
+
 	jobRoute := rootRoute.Path("").Subrouter()
 	jobRoute.Methods("POST").HandlerFunc(createJob)
 	jobRoute.Methods("GET").HandlerFunc(getJobs)

@@ -12,7 +12,7 @@ import (
 )
 
 type PostbackTrigger interface {
-	FireWebhook(call dto.JsonRpcCall) error
+	FireWebhook(call dto.JsonRPCCall) error
 }
 
 type LogPostbackTrigger struct{}
@@ -21,7 +21,7 @@ func NewLogPostbackTrigger() *LogPostbackTrigger {
 	return &LogPostbackTrigger{}
 }
 
-func (t *LogPostbackTrigger) FireWebhook(call dto.JsonRpcCall) error {
+func (t *LogPostbackTrigger) FireWebhook(call dto.JsonRPCCall) error {
 	fmt.Println("Logging call:")
 	fmt.Println(call)
 	return nil
@@ -37,7 +37,7 @@ func NewHTTPPostbackTrigger() *HTTPPostbackTrigger {
 	}
 }
 
-func (t *HTTPPostbackTrigger) FireWebhook(call dto.JsonRpcCall) error {
+func (t *HTTPPostbackTrigger) FireWebhook(call dto.JsonRPCCall) error {
 	tmpl, err := template.New("t").Parse(call.Jsonrpc)
 
 	buf := new(bytes.Buffer)

@@ -51,7 +51,7 @@ func NewJobManager(callbackTrigger postbacks.PostbackTrigger) (*JobManager, erro
 		if err != nil {
 			break
 		}
-		m.entryMap[job.Id] = cid
+		m.entryMap[job.ID] = cid
 	}
 
 	if err != nil {
@@ -101,34 +101,38 @@ func (m *JobManager) GetJobs(limit int, skip int) []dto.Job {
 func (m *JobManager) RemoveJob(jobId string) error {
 	job := m.GetJob(jobId)
 
-	if job.Id == bson.NewObjectId() {
+	if job.ID == bson.NewObjectId() {
 		return errors.New("Job not found")
 	}
 
-	err := m.session.get().RemoveId(job.Id)
+	err := m.session.get().RemoveId(job.ID)
 	if err != nil {
 		return err
 	}
 
-	m.cron.Remove(m.entryMap[job.Id])
+	m.cron.Remove(m.entryMap[job.ID])
 	return nil
 }
 
 func (m *JobManager) CreateJob(job dto.Job) (dto.Job, error) {
-	if job.Id != "" {
-		return dto.Job{}, errors.New("JobId may not be defined prior to creation")
+	if job.Name == "" {
+		return dto.Job{}, errors.New("Job must have a name")
 	}
-	job.Id = bson.NewObjectId()
+	if job.ID != "" {
+		return dto.Job{}, errors.New("Job ID may not be defined prior to creation")
+	}
+	job.ID = bson.NewObjectId()
 
-	cid, err := m.cron.AddFunc(job.Schedule, func() { m.RunJob(job) })
+	var cid cron.EntryID
+	err := m.session.get().Insert(job)
 	if err == nil {
-		err = m.session.get().Insert(job)
+		cid, err = m.cron.AddFunc(job.Schedule, func() { m.RunJob(job) })
 	}
 	if err != nil {
 		return dto.Job{}, errors.Wrap(err, "Failure adding job")
 	}
 
-	m.entryMap[job.Id] = cid
+	m.entryMap[job.ID] = cid
 
 	return job, nil
 }

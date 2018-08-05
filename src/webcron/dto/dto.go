@@ -4,7 +4,7 @@ import (
 	"github.com/globalsign/mgo/bson"
 )
 
-type JsonRpcCall struct {
+type JsonRPCCall struct {
 	Jsonrpc string                 `json:"jsonrpc"`
 	Method  string                 `json:"method"`
 	Params  map[string]interface{} `json:"params"`
@@ -12,8 +12,8 @@ type JsonRpcCall struct {
 }
 
 type Job struct {
-	Id bson.ObjectId `json:"id" bson:"_id"`
-	// TODO: add namespace and name properties
-	Schedule     string      `json:"schedule"`
-	CallTemplate JsonRpcCall `json:"callTemplate"`
+	ID           bson.ObjectId `json:"id" bson:"_id"`
+	Name         string        `json:"name"`
+	Schedule     string        `json:"schedule"`
+	CallTemplate JsonRPCCall   `json:"callTemplate"`
 }
