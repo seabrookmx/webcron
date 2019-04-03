@@ -1,5 +1,4 @@
 {
-    "go.gopath": "path/to/webcron",
     "go.lintTool": "golint",
     "editor.formatOnSave": true,
     "go.formatTool": "gofmt",

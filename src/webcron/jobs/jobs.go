@@ -47,6 +47,12 @@ func NewJobManager(callbackTrigger postbacks.PostbackTrigger) (*JobManager, erro
 	results := make([]dto.Job, 0)
 	err = m.session.get().Find(nil).Iter().All(&results)
 	for _, job := range results {
+		// TODO: BEDUG
+		_, ok := job.Webhook.Template.(bson.M)
+		if ok {
+			fmt.Println("do stuff!")
+		}
+
 		cid, err := m.cron.AddFunc(job.Schedule, func() { m.RunJob(job) })
 		if err != nil {
 			break
@@ -69,10 +75,10 @@ func (m *JobManager) RunJob(job dto.Job) {
 	 * instead of the Job so we can get access to some
 	 * global state, such as configuration params.
 	 */
-	err := m.postbackTrigger.FireWebhook(job.CallTemplate)
+	err := m.postbackTrigger.FireWebhook(job.Webhook)
 
 	if err != nil {
-		fmt.Printf("Postback error: %v\n", err)
+		fmt.Printf("Postback error (%s): %v\n", job.ID.String(), err)
 	}
 }
 
